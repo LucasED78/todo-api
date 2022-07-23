@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TodoAPI.Models;
+using System.Diagnostics;
 
 namespace TodoAPI.Controllers
 {
@@ -16,9 +17,14 @@ namespace TodoAPI.Controllers
     }
 
     [HttpGet]
-    public ActionResult<List<Todo>> Get()
+    public ActionResult<List<Todo>> Get([FromQuery] TodoFilters? filters)
     {
-      return _context.Todos.ToList();
+      if (filters?.IsCompleted is null) return _context.Todos.ToList();
+
+      return _context
+          .Todos
+          .Where(todo => todo.IsCompleted == filters.IsCompleted)
+          .ToList();
     }
 
     [HttpPost]
