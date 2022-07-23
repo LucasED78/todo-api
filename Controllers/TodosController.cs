@@ -40,5 +40,40 @@ namespace TodoAPI.Controllers
 
       return Created("", todo);
     }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> Put(long id, [FromBody] Todo? todo)
+    {
+      var todoFromDB = await _context.Todos.FindAsync(id);
+
+      if (todoFromDB is null)
+      {
+        return NotFound();
+      }
+
+      todoFromDB.Title = todo.Title;
+      todoFromDB.IsCompleted = todo.IsCompleted;
+
+      await _context.SaveChangesAsync();
+
+      return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> Delete(long id)
+    {
+      var todo = await _context.Todos.FindAsync(id);
+
+      if (todo is null)
+      {
+        return NotFound();
+      }
+
+      _context.Todos.Remove(todo);
+
+      await _context.SaveChangesAsync();
+
+      return NoContent();
+    }
   }
 }
