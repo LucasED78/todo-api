@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using TodoAPI.Models;
 using System.Diagnostics;
+using TodoAPI.Utility;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace TodoAPI.Controllers
 {
@@ -78,6 +81,45 @@ namespace TodoAPI.Controllers
       _context.Todos.Remove(todo);
 
       await _context.SaveChangesAsync();
+
+      return NoContent();
+    }
+
+    [HttpPost("[action]")]
+    public async Task<ActionResult> Upload()
+    {
+      var file = Request.Form.Files[0];
+
+      if (file.Length > 0)
+      {
+        var uploadedCSVPath = await FileUpload.Upload(file);
+
+        if (uploadedCSVPath != null)
+        {
+          try
+          {
+            var config = new CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
+            {
+              PrepareHeaderForMatch = args => args.Header.ToLower()
+            };
+
+            using var reader = new StreamReader(uploadedCSVPath);
+            using var csv = new CsvReader(reader, config);
+            var records = csv.GetRecords<Todo>();
+
+            _context.AddRange(records.ToList());
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+          } catch (Exception ex)
+          {
+            return BadRequest(ex.Message);
+          }
+        }
+
+        return BadRequest();
+      }
 
       return NoContent();
     }
