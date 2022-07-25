@@ -123,5 +123,27 @@ namespace TodoAPI.Controllers
 
       return NoContent();
     }
+
+    [HttpGet("[action]")]
+    public async Task<ActionResult> Download()
+    {
+      var todos = _context.Todos.ToList();
+
+      if (todos is null || todos.Count == 0)
+      {
+        return NoContent();
+      }
+
+      var destination = Path.Combine(Directory.GetCurrentDirectory(), "Resources", "Files", "temp.csv");
+
+      using var writer = new StreamWriter(destination);
+      using var csv = new CsvWriter(writer, System.Globalization.CultureInfo.InvariantCulture);
+
+      await csv.WriteRecordsAsync(todos);
+
+      var timestamp = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+
+      return PhysicalFile(destination, "text/csv", $"{timestamp}.csv");
+    }
   }
 }
